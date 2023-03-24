@@ -20,7 +20,7 @@ const TweetView = (props: PostWithAuthor) => {
           <span className="">·</span>
           <span>{dayjs(props.post.createdAt).fromNow()}</span>
         </div>
-        <span>{props.post.content}</span>
+        <span className="text-2xl">{props.post.content}</span>
       </div>
     </div>
   );
