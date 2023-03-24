@@ -1,6 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
+import { string, z } from "zod";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -87,7 +87,22 @@ export const postsRouter = createTRPCRouter({
     });
   }),
 
-  getPostsByUserId: publicProcedure
+  getById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const post = await ctx.prisma.post.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!post)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Post not found" });
+
+      return (await postWithAuthor([post]))[0];
+    }),
+
+  getByUserId: publicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       return await ctx.prisma.post
