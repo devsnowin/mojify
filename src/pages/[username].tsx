@@ -3,6 +3,25 @@ import Image from "next/image";
 import Spinner from "~/components/Spinner";
 import { api } from "~/utils/api";
 
+const ProfileFeed = (props: { userId: string }) => {
+  const { data: userPosts, isLoading } = api.posts.getPostsByUserId.useQuery({
+    userId: props.userId,
+  });
+
+  if (isLoading) return <Spinner />;
+
+  if (!userPosts || userPosts.length === 0)
+    return <div>User has not posted</div>;
+
+  return (
+    <ul className="flex w-full flex-col gap-4">
+      {userPosts?.map(({ post, author }) => (
+        <TweetView key={post.id} post={post} author={author} />
+      ))}
+    </ul>
+  );
+};
+
 const Profile: NextPage<{ username: string }> = ({ username }) => {
   const { data: profile, isLoading } =
     api.profile.getProfileByUsername.useQuery({ username });
@@ -11,7 +30,7 @@ const Profile: NextPage<{ username: string }> = ({ username }) => {
   if (!profile) return <p>404</p>;
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex w-full flex-col items-center gap-4">
       <Image
         src={profile.profileImageUrl}
         alt="user profile"
@@ -25,6 +44,7 @@ const Profile: NextPage<{ username: string }> = ({ username }) => {
         </h1>
         <span>{`@${profile.username as string}`}</span>
       </span>
+      <ProfileFeed userId={profile.id} />
     </div>
   );
 };
@@ -33,6 +53,7 @@ import { createProxySSGHelpers } from "@trpc/react-query/ssg";
 import superjson from "superjson";
 import { appRouter } from "~/server/api/root";
 import { prisma } from "~/server/db";
+import TweetView from "~/components/TweetView";
 
 export const getStaticProps: GetStaticProps = async (context) => {
   const ssg = createProxySSGHelpers({
