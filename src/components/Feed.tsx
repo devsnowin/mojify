@@ -7,6 +7,7 @@ const Feed = () => {
 
   if (postLoading) return <Spinner />;
   if (!posts) return <p>Something went wrong</p>;
+  if (posts.length <= 0) return <p>No posts :(</p>;
 
   return (
     <ul className="flex w-full flex-col gap-4">
