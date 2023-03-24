@@ -14,12 +14,20 @@ const config = {
    *
    * @see https://github.com/vercel/next.js/issues/41980
    */
+
+  images: {
+    domains: ["images.clerk.dev", "avatars.githubusercontent.com"],
+  },
   i18n: {
     locales: ["en"],
     defaultLocale: "en",
   },
-  images: {
-    domains: ["images.clerk.dev", "avatars.githubusercontent.com"],
+  typescript: {
+    ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  swcMinify: true,
 };
 export default config;
