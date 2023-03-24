@@ -1,4 +1,5 @@
 import { type NextPage } from "next";
+import { Fragment } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Feed from "~/components/Feed";
@@ -9,10 +10,10 @@ dayjs.extend(relativeTime);
 
 const Home: NextPage = () => {
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-col items-center gap-14">
+    <Fragment>
       <PostForm />
       <Feed />
-    </main>
+    </Fragment>
   );
 };
 

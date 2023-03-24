@@ -1,21 +1,22 @@
-import type { User } from "@clerk/nextjs/dist/api";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 import {
   createTRPCRouter,
   privateProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
+import { filteredUser } from "~/server/utils/helper";
 
-const filteredUser = (user: User) => {
-  return {
-    id: user.id,
-    username: user.username,
-    profileImageUrl: user.profileImageUrl,
-  };
-};
+// Create a new ratelimiter, that allows 10 requests per 10 seconds
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(3, "10 s"),
+  analytics: true,
+});
 
 export const postsRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -38,24 +39,40 @@ export const postsRouter = createTRPCRouter({
     return posts.map((post) => {
       const author = users.find((user) => user.id === post.authorId);
 
-      if (!author || !author.username)
+      if (!author || !author.username) {
+        console.error("AUTHOR NOT FOUND", post);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Author for post not found",
+          message: `Author for post not found. POST ID: ${post.id}, USER ID: ${post.authorId}`,
         });
+      }
 
-      return { post, author: { ...author, username: author.username } };
+      return {
+        post,
+        author: {
+          ...author,
+          username: author.username,
+        },
+      };
     });
   }),
 
   create: privateProcedure
     .input(
       z.object({
-        content: z.string().emoji().min(1).max(280),
+        content: z.string().emoji("Only emojis are allowed!").min(1).max(280),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const authorId = ctx.userId;
+
+      const { success } = await ratelimit.limit(authorId);
+
+      if (!success)
+        throw new TRPCError({
+          code: "TOO_MANY_REQUESTS",
+          message: "Too many request! please try after some time.",
+        });
 
       const post = await ctx.prisma.post.create({
         data: {
