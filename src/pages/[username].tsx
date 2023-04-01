@@ -14,8 +14,7 @@ const ProfileFeed = (props: { userId: string }) => {
 
   if (isLoading) return <Spinner />;
 
-  if (!userPosts || userPosts.length === 0)
-    return <div>User has not posted</div>;
+  if (!userPosts || userPosts.length === 0) return <div>User has no post</div>;
 
   return (
     <ul className="flex w-full flex-col gap-4">
